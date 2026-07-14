@@ -11,6 +11,7 @@ import {
   ListItemText,
   Stack,
   IconButton,
+  Box,
 } from "@mui/material";
 
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -26,56 +27,69 @@ function LibraryDialog({
 }) {
   const fileInputRef = useRef(null);
 
-const handleAddDocument = async (event) => {
-  const files = Array.from(event.target.files);
+  const handleAddDocument = async (event) => {
+    const files = Array.from(event.target.files);
 
-  console.log("Fișiere selectate:", files);
+    console.log("Fișiere selectate:", files);
 
-  const newDocuments = [];
+    const newDocuments = [];
 
-  for (const file of files) {
-    console.log("Procesez:", file.name);
+    for (const file of files) {
+      console.log("Procesez:", file.name);
 
-    let content = "";
+      let content = "";
 
-    if (file.type === "application/pdf") {
-      console.log("Încep citirea PDF...");
-      content = await extractPdfText(file);
-      console.log(
-        "Text extras:",
-        content.substring(0, 200)
-      );
+      if (file.type === "application/pdf") {
+        console.log("Încep citirea PDF...");
+
+        content = await extractPdfText(file);
+
+        console.log(
+          "Text extras:",
+          content.substring(0, 200)
+        );
+      }
+
+      newDocuments.push({
+        id: crypto.randomUUID(),
+        name: file.name,
+        type: file.name.split(".").pop().toLowerCase(),
+        content,
+        status: content ? "pregatit" : "nou",
+        uploadedAt: new Date().toISOString(),
+      });
     }
 
-    newDocuments.push({
-      id: crypto.randomUUID(),
-      name: file.name,
-      type: file.name.split(".").pop().toLowerCase(),
-      content,
-      status: content ? "pregatit" : "nou",
-      uploadedAt: new Date().toISOString(),
-    });
-  }
+    console.log("Documente finale:", newDocuments);
 
-  console.log("Documente finale:", newDocuments);
+    addDocuments(newDocuments);
 
-  addDocuments(newDocuments);
-
-  event.target.value = "";
-};
+    event.target.value = "";
+  };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>📚 Biblioteca</DialogTitle>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+    >
+      <DialogTitle>
+        📚 Biblioteca
+      </DialogTitle>
 
       <DialogContent dividers>
         <Stack spacing={2}>
+
           <Button
             variant="contained"
-            onClick={() => fileInputRef.current.click()}
+            onClick={() =>
+              fileInputRef.current.click()
+            }
           >
             + Adaugă document
           </Button>
+
 
           <input
             ref={fileInputRef}
@@ -86,46 +100,99 @@ const handleAddDocument = async (event) => {
             onChange={handleAddDocument}
           />
 
+
           {documents.length === 0 ? (
             <Typography color="text.secondary">
               Nu există documente în bibliotecă.
             </Typography>
           ) : (
+
             <List>
               {documents.map((doc) => (
+
                 <ListItem
                   key={doc.id}
+                  alignItems="flex-start"
                   secondaryAction={
                     <IconButton
                       edge="end"
                       color="error"
-                      onClick={() => removeDocument(doc.id)}
+                      onClick={() =>
+                        removeDocument(doc.id)
+                      }
                     >
                       <DeleteIcon />
                     </IconButton>
                   }
                 >
+
                   <ListItemText
-                    primary={doc.name}
-                    secondary={
-                      <>
-                        {doc.type.toUpperCase()} -{" "}
-                        {doc.status === "pregatit"
-                          ? "🟢 Pregătit"
-                          : "🟡 Neprocesat"}
-                      </>
+
+                    primary={
+                      <Typography variant="subtitle1">
+                        📄 {doc.name}
+                      </Typography>
                     }
+
+
+                    secondary={
+                      <Box sx={{ mt: 1 }}>
+
+                        <Typography variant="body2">
+                          {doc.type.toUpperCase()} -{" "}
+                          {doc.status === "pregatit"
+                            ? "🟢 Pregătit"
+                            : "🟡 Neprocesat"}
+                        </Typography>
+
+
+                        {doc.content && (
+
+                          <Box sx={{ mt: 1 }}>
+
+                            <Typography variant="body2">
+                              📝 Text extras:
+                            </Typography>
+
+
+                            <Typography variant="body2">
+                              {doc.content.length.toLocaleString()} caractere
+                            </Typography>
+
+                          </Box>
+
+                        )}
+
+                      </Box>
+                    }
+
+
+                    slotProps={{
+                      secondary: {
+                        component: "div",
+                      },
+                    }}
+
                   />
+
                 </ListItem>
+
               ))}
+
             </List>
+
           )}
+
         </Stack>
       </DialogContent>
 
+
       <DialogActions>
-        <Button onClick={onClose}>Închide</Button>
+        <Button onClick={onClose}>
+          Închide
+        </Button>
       </DialogActions>
+
     </Dialog>
   );
 }
