@@ -15,6 +15,8 @@ import {
 
 import DeleteIcon from "@mui/icons-material/Delete";
 
+import { extractPdfText } from "../services/documentService";
+
 function LibraryDialog({
   open,
   onClose,
@@ -24,20 +26,43 @@ function LibraryDialog({
 }) {
   const fileInputRef = useRef(null);
 
-  const handleAddDocument = (event) => {
-    const files = Array.from(event.target.files);
+const handleAddDocument = async (event) => {
+  const files = Array.from(event.target.files);
 
-    const newDocuments = files.map((file) => ({
+  console.log("Fișiere selectate:", files);
+
+  const newDocuments = [];
+
+  for (const file of files) {
+    console.log("Procesez:", file.name);
+
+    let content = "";
+
+    if (file.type === "application/pdf") {
+      console.log("Încep citirea PDF...");
+      content = await extractPdfText(file);
+      console.log(
+        "Text extras:",
+        content.substring(0, 200)
+      );
+    }
+
+    newDocuments.push({
       id: crypto.randomUUID(),
       name: file.name,
       type: file.name.split(".").pop().toLowerCase(),
-      file,
-    }));
+      content,
+      status: content ? "pregatit" : "nou",
+      uploadedAt: new Date().toISOString(),
+    });
+  }
 
-    addDocuments(newDocuments);
+  console.log("Documente finale:", newDocuments);
 
-    event.target.value = "";
-  };
+  addDocuments(newDocuments);
+
+  event.target.value = "";
+};
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -82,7 +107,14 @@ function LibraryDialog({
                 >
                   <ListItemText
                     primary={doc.name}
-                    secondary={doc.type.toUpperCase()}
+                    secondary={
+                      <>
+                        {doc.type.toUpperCase()} -{" "}
+                        {doc.status === "pregatit"
+                          ? "🟢 Pregătit"
+                          : "🟡 Neprocesat"}
+                      </>
+                    }
                   />
                 </ListItem>
               ))}
